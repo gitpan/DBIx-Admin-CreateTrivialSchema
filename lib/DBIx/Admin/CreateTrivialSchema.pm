@@ -52,7 +52,7 @@ our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
 our @EXPORT = qw(
 
 );
-our $VERSION = '1.00';
+our $VERSION = '1.01';
 
 # -----------------------------------------------
 
@@ -66,7 +66,7 @@ our $VERSION = '1.00';
 	my(%_attr_data) =
 	(
 		_dbh		=> 0,
-		_default	=> '',
+		_default	=> undef,
 		_not_null	=> 0,
 		_schema		=> {},
 		_type		=> 'varchar(255)',
@@ -109,7 +109,7 @@ sub new
 	}
 
 	my($option) = $$self{'_not_null'} ? ' not null' : '';
-	$option		.= $$self{'_default'} ? " default $$self{'_default'}" : '';
+	$option		.= defined($$self{'_default'}) ? $$self{'_default'} =~ /^\d+$/ ? " default $$self{'_default'}" : qq| default "$$self{'_default'}"| : '';
 
 	my($table_name, $column_name, $sql);
 
@@ -119,7 +119,7 @@ sub new
 
 		for $column_name (@{$$self{'_schema'}{$table_name} })
 		{
-			push @column, "$column_name $$self{'_type'}$option";
+			push @column, qq|$column_name $$self{'_type'}$option|;
 		}
 
 		$sql = "create table $table_name (" . join(', ', @column) . ')';
@@ -193,11 +193,13 @@ This enables you to get the data into some sort of schema when the create statem
 the original schema are not available on the target platform. For instance, use this technique when you
 want to dump data from MS Access into Postgres under GNU/Linux.
 
-This method is recommended instead of my previous attempt: C<DBIx::MSAccess::Convert2Db>.
+This module is recommended instead of my previous attempt: C<DBIx::MSAccess::Convert2Db>.
+
+See also: http://savage.net.au/Ron/html/msaccess2rdbms.html
 
 For a more sophisticated migration technique, see:
 
-	http://dev.mysql.com/tech-resources/articles/migrating-from-microsoft.html
+http://dev.mysql.com/tech-resources/articles/migrating-from-microsoft.html
 
 =head1 Distributions
 
@@ -233,14 +235,24 @@ This parameter is mandatory.
 
 =item default
 
-This parameter takes a string to be inserted into the create statement, which
+This parameter takes a value to be inserted into the create statement, which
 specifies the default value you want for all columns.
 
-Eg: A value of '-' means generate this code:
+A value of 99, which matches /^\d+$/, means generate this code:
 
-create table t (column_a varchar(255) default '-').
+create table t (column_a varchar(255) default 99).
 
-The default value is '' (the empty string), which means the default clause is not inserted into the SQL.
+Notice how the value you supply is inserted without quotes, because it matched /^\d+$/.
+
+A value of '-' means generate this code:
+
+create table t (column_a varchar(255) default "-").
+
+Notice how the value you supply, if not all digits, is put inside double quotes.
+
+Do not provide a value of ", because it simply won't work.
+
+The default value is undef, which means the default clause is not inserted into the SQL.
 
 This parameter is optional.
 

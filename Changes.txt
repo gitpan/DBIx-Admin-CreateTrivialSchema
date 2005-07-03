@@ -1,4 +1,10 @@
 Revision history for Perl extension DBIx::Admin::CreateTrivialSchema.
 
-1.00  Thu Jun 27 09:46:11 2005
+1.01  Thu Jun 29 20:46:00 2005
+	- Change the handling of the value of the 'default' option, to allow 0, and to
+		simplify providing a string. See POD for details. Now, if the value matches
+		/^\d+$/, the SQL contains 'default N', but if the value does not match that
+		pattern, and is defined, the SQL contains 'default "X"'
+
+1.00  Mon Jun 27 09:46:11 2005
 	- original version
